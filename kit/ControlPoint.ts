@@ -1,4 +1,5 @@
-import { CanvasKitElement, getMovePoint } from "../elements/baseElement";
+import { CanvasKitElement, } from "../elements/baseElement";
+import { getMovePoint } from "../util";
 
 
 

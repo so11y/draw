@@ -1,6 +1,5 @@
 import { CanvasKitElement } from "./elements/baseElement";
 import { BoxSelectElement } from "./kit/BoxSelect";
-import { asyncIter } from "./kit/asyncIter";
 import { KitEvent } from "./kit/event";
 import { ElementSelect } from "./kit/select";
 
@@ -11,10 +10,12 @@ interface CanvasKitOptions {
 
 export class CanvasKit {
   kitOptions: CanvasKitOptions;
-  elements: CanvasKitElement[] = [
+  internalElement: CanvasKitElement[] = [
     new ElementSelect(0, 0, 0, 0),
     new BoxSelectElement(0, 0, 0, 0),
   ];
+  elements: CanvasKitElement[] = [];
+
   elementMap: Map<number, CanvasKitElement> = new Map();
   canvasCtx: CanvasRenderingContext2D;// OffscreenCanvasRenderingContext2D;
   canvasElement: HTMLCanvasElement;
@@ -37,6 +38,9 @@ export class CanvasKit {
     this.canvasCtx.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
 
     this.elements.forEach((element) => {
+      element.draw(this);
+    })
+    this.internalElement.forEach((element) => {
       element.draw(this);
     })
     // asyncIter(this.elements, (element) => {

@@ -66,15 +66,17 @@ export class ElementSelect extends CanvasKitElement {
   reset() {
 
     const { kitEvent, elementMap } = this.kit
-    const { x, y } = this.getOffset();
-    kitEvent.currentElement = elementMap.get(BoxSelectElementId)!;
-    kitEvent.currentElement.width = this.width;
-    kitEvent.currentElement.height = this.height;
-    kitEvent.currentElement.x = x;
-    kitEvent.currentElement.y = y;
-    kitEvent.currentElement.originalPoint = { x, y };
-    kitEvent.currentElement.children = this.children;
-
+    if (this.children.length) {
+      kitEvent.currentElement = elementMap.get(BoxSelectElementId)!;
+      kitEvent.currentElement.reset();
+      kitEvent.currentElement.children = this.children;
+      const { x, y, width, height } = kitEvent.currentElement.getOffset();
+      kitEvent.currentElement.x = x;
+      kitEvent.currentElement.y = y;
+      kitEvent.currentElement.width = width;
+      kitEvent.currentElement.height = height;
+      kitEvent.currentElement.originalPoint = { x, y };
+    }
     super.reset();
     this.isSelect = false;
   }

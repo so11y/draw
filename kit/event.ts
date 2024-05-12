@@ -14,30 +14,46 @@ export class KitEvent {
   }
 
   constructor(kit: CanvasKit) {
-    const { canvasElement, elementMap } = kit;
+    const { canvasElement, internalElement, elements } = kit;
 
+    const getCurrentElement = (element: CanvasKitElement, e: MouseEvent) => {
+      if (element.inspectPointRect(e)) {
+        if (element.isControl()) {
+          this.currentControl = element;
+        } else {
+          this.currentElement = element;
+        }
+        canvasElement.style.cursor = "pointer";
+        return true;
+      } else {
+        this.currentElement = null;
+        this.currentControl = null;
+        canvasElement.style.cursor = "default";
+      }
+    }
     canvasElement.addEventListener("mousemove", (e) => {
-      if (this.currentInTap && this.downPoint && this.currentElement) {
+
+      if (this.currentInTap && this.downPoint && this.getCurrentElement) {
         this.getCurrentElement!.dispatchEvent(new MouseEvent("move", e));
         this.getCurrentElement!.move(e);
         kit.render();
         return
       }
-      for (const element of elementMap.values()) {
-        if (element.inspectPointRect(e)) {
-          if (element.isControl()) {
-            this.currentControl = element;
-          } else {
-            this.currentElement = element;
-          }
-          canvasElement.style.cursor = "pointer";
-          break;
-        } else {
-          this.currentElement = null;
-          this.currentControl = null;
-          canvasElement.style.cursor = "default";
+
+      for (const element of internalElement) {
+        if (getCurrentElement(element, e)) {
+          break
         }
       }
+
+      if (!this.getCurrentElement) {
+        for (const element of elements) {
+          if (getCurrentElement(element, e)) {
+            break
+          }
+        }
+      }
+
 
       //如果当前点击了,但是没有找到元素那么激活ElementSelect
       if (!this.currentControl && !this.currentElement && this.currentInTap) {
@@ -59,6 +75,10 @@ export class KitEvent {
 
         this.currentElement.originalPoint.x = this.currentElement.x;
         this.currentElement.originalPoint.y = this.currentElement.y;
+        this.currentElement.children.forEach((child) => {
+          child.originalPoint.x = child.x;
+          child.originalPoint.y = child.y;
+        })
 
         if (this.currentElement.id === ElementSelectId) {
           (this.currentElement as ElementSelect).isSelect = false;
