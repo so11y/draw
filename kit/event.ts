@@ -67,6 +67,8 @@ export class KitEvent {
     canvasElement.addEventListener("mousedown", (e) => {
       this.currentInTap = true;
       this.downPoint = { x: e.offsetX, y: e.offsetY };
+      this.currentControl = null;
+      this.currentElement = null;
     })
 
     canvasElement.addEventListener("mouseup", (e) => {

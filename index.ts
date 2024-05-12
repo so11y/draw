@@ -18,9 +18,12 @@ rect.addEventListener("click", (e) => {
   console.log(e);
 })
 
-kit.addElement(rect).addElement(controlPoint).addElement(rect1);
+kit.addElement(rect)
+// .addElement(controlPoint)
+// .addElement(rect1);
 
 kit.render();
 
 
+//@ts-ignore
 window.kit = kit;
