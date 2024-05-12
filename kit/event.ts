@@ -6,30 +6,41 @@ import { ElementSelect, ElementSelectId } from "./select";
 export class KitEvent {
   currentElement: CanvasKitElement | null;
   currentInTap = false;
+  currentControl: CanvasKitElement | null;
   downPoint: { x: number, y: number } | null = null;
+
+  get getCurrentElement() {
+    return this.currentControl || this.currentElement;
+  }
+
   constructor(kit: CanvasKit) {
     const { canvasElement, elementMap } = kit;
 
     canvasElement.addEventListener("mousemove", (e) => {
       if (this.currentInTap && this.downPoint && this.currentElement) {
-        this.currentElement.dispatchEvent(new MouseEvent("move", e));
-        this.currentElement.move(e);
+        this.getCurrentElement!.dispatchEvent(new MouseEvent("move", e));
+        this.getCurrentElement!.move(e);
         kit.render();
         return
       }
       for (const element of elementMap.values()) {
         if (element.inspectPointRect(e)) {
-          this.currentElement = element;
+          if (element.isControl()) {
+            this.currentControl = element;
+          } else {
+            this.currentElement = element;
+          }
           canvasElement.style.cursor = "pointer";
           break;
         } else {
           this.currentElement = null;
+          this.currentControl = null;
           canvasElement.style.cursor = "default";
         }
       }
 
       //如果当前点击了,但是没有找到元素那么激活ElementSelect
-      if (!this.currentElement && this.currentInTap) {
+      if (!this.currentControl && !this.currentElement && this.currentInTap) {
         this.currentElement = kit.elementMap.get(ElementSelectId)!;
         (this.currentElement as ElementSelect).isSelect = true
         canvasElement.style.cursor = "default";
@@ -44,16 +55,14 @@ export class KitEvent {
 
     canvasElement.addEventListener("mouseup", (e) => {
       if (this.currentElement && this.currentInTap) {
-        const notStop = this.currentElement.dispatchEvent(new MouseEvent("click", e));
+        this.currentElement.dispatchEvent(new MouseEvent("click", e));
 
-        if (notStop) {
-          this.currentElement.originalPoint.x = this.currentElement.x;
-          this.currentElement.originalPoint.y = this.currentElement.y;
+        this.currentElement.originalPoint.x = this.currentElement.x;
+        this.currentElement.originalPoint.y = this.currentElement.y;
 
-          if (this.currentElement.id === ElementSelectId) {
-            (this.currentElement as ElementSelect).isSelect = false;
-            (this.currentElement as ElementSelect).reset();
-          }
+        if (this.currentElement.id === ElementSelectId) {
+          (this.currentElement as ElementSelect).isSelect = false;
+          (this.currentElement as ElementSelect).reset();
         }
       }
       this.currentInTap = false

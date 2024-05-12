@@ -1,5 +1,68 @@
 import { CanvasKit } from "../canvas";
 
+interface Point {
+  x: number;
+  y: number;
+}
+interface PointRect extends Point {
+  width: number;
+  height: number;
+  topRight: number;
+  bottomRight: number;
+}
+
+export function getRectOfPoints(points: Point[]): PointRect {
+  let x = Infinity;
+  let y = Infinity;
+  let topRight = -Infinity;
+  let bottomRight = -Infinity;
+
+  points?.forEach((item) => {
+    if (!isFinite(item.x) || !isFinite(item.y)) {
+      return;
+    }
+    x = Math.min(x, item.x);
+    y = Math.min(y, item.y);
+    topRight = Math.max(topRight, item.x);
+    bottomRight = Math.max(bottomRight, item.y);
+  });
+  return { x, y, topRight, bottomRight, width: topRight - x, height: bottomRight - y };
+}
+
+export function rotatePoint(pt: Point, angle: number, center: Point) {
+  if (!angle || angle % 360 === 0) {
+    return;
+  }
+  const a = (angle * Math.PI) / 180;
+  const x =
+    (pt.x - center.x) * Math.cos(a) -
+    (pt.y - center.y) * Math.sin(a) +
+    center.x;
+  const y =
+    (pt.x - center.x) * Math.sin(a) +
+    (pt.y - center.y) * Math.cos(a) +
+    center.y;
+  pt.x = x;
+  pt.y = y;
+}
+
+export function rectToPoints(rect: CanvasKitElement) {
+  const { x, y, topRight, bottomRight, center } = rect.getOffset();
+  const pts = [
+    { x, y },
+    { x: topRight, y },
+    { x: topRight, y: bottomRight },
+    { x, y: bottomRight },
+  ];
+
+  if (rect.angle) {
+    pts.forEach((pt) => {
+      rotatePoint(pt, rect.angle, center);
+    });
+  }
+  return pts;
+}
+
 export function getMovePoint(element: CanvasKitElement, e: MouseEvent) {
   const { kitEvent } = element.kit;
   const downPoint = kitEvent.downPoint!
@@ -40,8 +103,8 @@ export abstract class CanvasKitElement extends EventTarget {
     this.kit = kit;
   }
 
-  getOffset() {
-    const { y, x, width, height } = this;
+  getOffset(point: { x: number, y: number, width: number, height: number } = this) {
+    const { y, x, width, height } = point;
     return {
       x,
       y,
@@ -49,7 +112,11 @@ export abstract class CanvasKitElement extends EventTarget {
       topRight: x + width,
       bottomLeft: x + height,
       bottomRight: y + height,
-      width, height
+      width, height,
+      center: {
+        x: x + width / 2,
+        y: y + height / 2
+      }
     };
   }
 
@@ -85,9 +152,14 @@ export abstract class CanvasKitElement extends EventTarget {
 
 
   inspectRect(diffEle: CanvasKitElement) {
-    const { x, y } = this.getOffset();
-    const { x: diffX, y: diffY, width: diffWidth, height: diffHeight } = diffEle.getOffset();
-    return x < diffX + diffWidth && x + this.width > diffX && y < diffY + diffHeight && y + this.height > diffY;
+    let source = getRectOfPoints(rectToPoints(this));
+    let target = getRectOfPoints(rectToPoints(diffEle));
+    return !(
+      source.x > target.topRight ||
+      source.topRight < target.x ||
+      source.bottomRight < target.y ||
+      source.y > target.bottomRight
+    );
   }
 
   move(e: MouseEvent) {
@@ -120,6 +192,10 @@ export abstract class CanvasKitElement extends EventTarget {
       canvasCtx.rotate(angle * Math.PI / 180,)
       canvasCtx.translate(-(x + 0.5 * width), -(y + 0.5 * height))
     }
+  }
+
+  isControl() {
+    return false
   }
 
   reset() {

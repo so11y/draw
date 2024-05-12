@@ -54,48 +54,14 @@ export class ElementSelect extends CanvasKitElement {
     const { kitEvent } = this.kit
     const { x, y } = kitEvent.downPoint!
     const { width, height } = this;
-    return {
+    return super.getOffset({
       x,
       y,
-      topLeft: x,
-      topRight: x + width,
-      bottomLeft: x + height,
-      bottomRight: y + height,
-      width, height
-    };
+      width,
+      height
+    })
   }
 
-  inspectRect(diffEle: CanvasKitElement) {
-    const { y, topLeft, topRight, bottomLeft, bottomRight } = this.getOffset();
-
-    //左上角
-    let isInTopLeft = diffEle.inspectPointRect({
-      offsetX: topLeft,
-      offsetY: y
-    })
-
-    //右上角
-    let isInTopRight = diffEle.inspectPointRect({
-      offsetX: topRight,
-      offsetY: y
-    })
-
-    //左下角
-    let isInBottomLeft = diffEle.inspectPointRect({
-      offsetX: topLeft,
-      offsetY: bottomLeft
-    })
-
-    //右下角
-    let isInBottomRight = diffEle.inspectPointRect({
-      offsetX: topRight,
-      offsetY: bottomRight
-    })
-
-    return isInTopLeft || isInTopRight ||
-      isInBottomLeft || isInBottomRight ||
-      super.inspectRect(diffEle);
-  }
 
   reset() {
 
